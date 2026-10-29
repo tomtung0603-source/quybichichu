@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quỷ Bí Chi Chủ: Con Đường Thần Thánh (Grid Edition)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --bg-panel: #0e131f;
+            --bg-card: #151c2e;
+            --border-gold: #c5a059;
+            --border-dark: #2a344d;
+            --text-main: #d1d5db;
+            --text-gold: #e6c567;
+            --text-dim: #8b9bb4;
+            --accent-red: #8b0000;
+            --accent-green: #2e7d32;
+            --accent-purple: #7b1fa2;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Merriweather', serif;
+            font-size: 13px;
+            line-height: 1.5;
+            padding: 8px;
+        }
+        h1, h2, h3, .title-font { font-family: 'Cinzel', serif; color: var(--text-gold); }
+        .container { max-width: 1250px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+        header { text-align: center; border-bottom: 2px solid var(--border-gold); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { font-size: 1.5rem; letter-spacing: 2px; }
+        header p { color: var(--text-dim); font-size: 0.8rem; font-style: italic; }
+        
+        .main-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        @media(min-width: 950px) {
+            .main-grid { grid-template-columns: 290px 1fr 280px; }
+        }
+        
+        .panel {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-gold);
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+        }
+        .panel h3 { font-size: 0.95rem; border-bottom: 1px dashed var(--border-gold); padding-bottom: 4px; margin-bottom: 6px; }
+        
+        /* Stats */
+        .stat-group { margin-bottom: 5px; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 0.8rem; }
+        .bar-container { background: #1a233a; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 2px; border: 1px solid var(--border-dark); }
+        .bar-fill { height: 100%; transition: width 0.3s ease; }
+        .fill-humanity { background: #4caf50; }
+        .fill-madness { background: #e53935; }
+        .fill-spiritual { background: #2196f3; }
+        
+        /* Center Log & Grid Navigator */
+        .center-screen { display: flex; flex-direction: column; gap: 10px; }
+        .log-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            height: 160px;
+            overflow-y: auto;
+            padding: 8px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .log-entry { border-left: 3px solid var(--border-gold); padding-left: 6px; }
+        
+        /* Grid Map UI (5000x5000) */
+        .grid-viewport {
+            background: #0b101c;
+            border: 1px solid var(--border-gold);
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+        }
+        .grid-matrix {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            max-width: 240px;
+            margin: 6px auto;
+        }
+        .grid-tile {
+            background: #131b2e;
+            border: 1px solid var(--border-dark);
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            border-radius: 3px;
+        }
+        .grid-tile.current {
+            background: var(--border-gold);
+            color: var(--bg-dark);
+            font-weight: bold;
+            border-color: #fff;
+        }
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(2, 35px);
+            gap: 4px;
+            justify-content: center;
+            margin-top: 6px;
+        }
+        
+        /* Action Grid */
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        button {
+            background: linear-gradient(to bottom, #1f293d, #111827);
+            color: var(--text-gold);
+            border: 1px solid var(--border-gold);
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        button:hover:not(:disabled) { background: var(--border-gold); color: var(--bg-dark); box-shadow: 0 0 8px rgba(197,160,89,0.5); }
+        button:disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border-dark); color: var(--text-dim); }
+
+        /* Modal Screens */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5,7,12,0.92);
+            display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 15px;
+        }
+        .modal-content {
+            background: var(--bg-panel);
+            border: 2px solid var(--border-gold);
+            padding: 15px;
+            width: 100%; max-width: 600px;
+            border-radius: 8px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .choice-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-dark);
+            padding: 8px 10px; margin-bottom: 6px; border-radius: 4px; cursor: pointer; transition: 0.2s;
+        }
+        .choice-card:hover { border-color: var(--border-gold); background: #1b263b; }
+        
+        .hidden { display: none !important; }
+        .badge { display: inline-block; padding: 2px 5px; font-size: 0.7rem; border: 1px solid var(--border-gold); border-radius: 3px; color: var(--text-gold); }
+        
+        #login-screen {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--bg-dark); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+        }
+        .google-btn {
+            background: #ffffff; color: #333; font-family: 'Merriweather', serif; font-weight: bold;
+            display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MÀN HÌNH ĐĂNG NHẬP GOOGLE -->
+    <div id="login-screen">
+        <div style="text-align:center; max-width: 420px; background:var(--bg-panel); border:2px solid var(--border-gold); padding:25px; border-radius:8px;">
+            <h1 style="font-size:1.6rem; margin-bottom:8px;">QUỶ BÍ CHI CHỦ</h1>
+            <p style="color:var(--text-dim); font-size:0.85rem; margin-bottom:15px;">Con Đường Thần Thánh - Grid Edition (5000x5000)</p>
+            <button class="google-btn" onclick="loginWithGoogle()" style="margin: 0 auto;">
+                <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.3 7.22 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.18C.43 8.13 0 9.87 0 11.76s.43 3.63 1.18 5.15l4.09-2.67z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.15 2.7 1.18 6.61l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+                Đăng nhập bằng Google
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL KHỞI TẠO CON ĐƯỜNG & XUẤT THÂN -->
+    <div id="origin-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>LỰA CHỌN CON ĐƯỜNG & XUẤT THÂN</h2>
+            <p style="margin: 8px 0; color: var(--text-dim); font-size: 0.85rem;">Chào <span id="auth-username" style="color:var(--text-gold);"></span>, thế giới Sương Mù rộng lớn với lưới tọa độ 5000x5000 đang chờ bạn khám phá:</p>
+            
+            <div style="margin-top: 10px;">
+                <h3 style="font-size: 0.9rem; color: var(--text-gold); margin-bottom: 5px;">1. Chọn Con Đường Phi Phàm:</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 10px;">
+                    <button onclick="selectPathway('Fool', 'Bói Toán Gia')" id="btn-path-Fool" style="border-color:var(--border-gold);">Bói Toán Gia (Fool)</button>
+                    <button onclick="selectPathway('Error', 'Kẻ Trộm / Chiếm Đoạt')" id="btn-path-Error">Kẻ Trộm / Chiếm Đoạt (Error)</button>
+                    <button onclick="selectPathway('Door', 'Học Đồ')" id="btn-path-Door">Học Đồ (Door)</button>
+                    <button onclick="selectPathway('Paragon', 'Thợ Thủ Công')" id="btn-path-Paragon">Thợ Thủ Công (Paragon)</button>
+                    <button onclick="selectPathway('Visionary', 'Khán Giả')" id="btn-path-Visionary">Khán Giả (Visionary)</button>
+                </div>
+
+                <h3 style="font-size: 0.9rem; color: var(--text-gold); margin-bottom: 5px;">2. Chọn Thân Phận Khởi Đầu:</h3>
+                <div class="choice-card" onclick="setOrigin('church', 'Giáo Hội Chính Thống')">
+                    <strong>Giáo Hội Chính Thống</strong>
+                    <p style="font-size: 0.75rem; color: var(--text-dim);">An toàn, có lương, nhân tính cao. Nhận cảnh báo khi có tà giáo.</p>
+                </div>
+                <div class="choice-card" onclick="setOrigin('wild', 'Phi Phàm Giả Lang Thang')">
+                    <strong>Phi Phàm Giả Lang Thang</strong>
+                    <p style="font-size: 0.75rem; color: var(--text-dim);">Tự do hoàn toàn, khám phá lưới tọa độ tự do.</p>
+                </div>
+                <div class="choice-card" onclick="setOrigin('cultist', 'Tín Đồ Tà Thần')">
+                    <strong>Tín Đồ Tà Thần / Hội Kín</strong>
+                    <p style="font-size: 0.75rem; color: var(--text-dim);">Có thể cầu nguyện Tà Thần, dễ bị Giáo hội truy sát trên bản đồ.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GIAO TRANH -->
+    <div id="combat-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="text-align: center;">
+            <h2 style="color: var(--accent-red); margin-bottom: 8px;">GIAO TRANH TẠI TỌA ĐỘ</h2>
+            <p id="enemy-desc" style="font-style: italic; margin-bottom: 10px; font-size: 0.85rem;"></p>
+            <div style="display: flex; justify-content: space-around; margin-bottom: 10px; font-weight: bold; font-size: 0.85rem;">
+                <div>HP Bạn: <span id="combat-player-hp" style="color:#4caf50;">100</span></div>
+                <div>HP Địch: <span id="combat-enemy-hp" style="color:#e53935;">100</span></div>
+            </div>
+            <div id="combat-log" style="background:var(--bg-card); padding:6px; height:70px; overflow-y:auto; font-size:0.75rem; margin-bottom:10px; text-align:left; border:1px solid var(--border-dark);"></div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                <button onclick="combatAction('attack')">Tấn Công Thường</button>
+                <button onclick="combatAction('skill')">Kỹ Năng Phi Phàm</button>
+                <button onclick="combatAction('item')">Dùng Vật Phẩm</button>
+                <button onclick="combatAction('escape')">Bỏ Chạy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHẾ TẠO THỢ THỦ CÔNG (PARAGON) -->
+    <div id="craft-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>XƯỞNG RÈN ĐÚC PHI PHÀM (PARAGON)</h2>
+            <p style="color:var(--text-dim); font-size:0.8rem; margin-bottom:8px;">Kết hợp nguyên liệu và đặc chất để chế tác trang bị phong ấn:</p>
+            <div class="choice-card" onclick="craftItem('Súng Kháng Ma Hơi Nước')">
+                <strong>Súng Kháng Ma Hơi Nước</strong>
+                <p style="font-size:0.75rem; color:var(--text-dim);">Yêu cầu: 2 Đặc chất cấp thấp + 5 Bảng.</p>
+            </div>
+            <div class="choice-card" onclick="craftItem('Bùa Hộ Mệnh Ánh Sáng')">
+                <strong>Bùa Hộ Mệnh Ánh Sáng</strong>
+                <p style="font-size:0.75rem; color:var(--text-dim);">Yêu cầu: 1 Đặc chất + 2 Bảng.</p>
+            </div>
+            <button onclick="closeCraftModal()" style="width:100%; margin-top:8px; border-color:var(--accent-red); color:#ff6b6b;">Đóng</button>
+        </div>
+    </div>
+
+    <!-- GIAO DIỆN CHÍNH -->
+    <div class="container">
+        <header>
+            <div>
+                <h1>QUỶ BÍ CHI CHỦ</h1>
+                <p>Grid Edition - 5000x5000 Sương Mù</p>
+            </div>
+            <div>
+                <span id="header-user-badge" class="badge">Chưa đăng nhập</span>
+                <button onclick="logout()" style="padding:3px 6px; font-size:0.7rem; margin-left:6px;">Đăng Xuất</button>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <!-- SIDEBAR TRÁI -->
+            <div class="panel">
+                <h3>THÔNG TIN CÁ NHÂN</h3>
+                <div style="margin-bottom: 6px; font-size: 0.8rem;">
+                    <div>Tài khoản: <strong id="ui-username" style="color:var(--text-gold);">...</strong></div>
+                    <div>Xuất thân: <strong id="ui-origin" style="color:var(--text-gold);">...</strong></div>
+                    <div>Con Đường: <strong id="ui-pathway" style="color:var(--text-gold);">Bói Toán Gia</strong></div>
+                    <div>Danh Sách: <strong id="ui-sequence" style="color:var(--text-gold);">Danh Sách 9</strong></div>
+                    <div>Tọa độ: <strong id="ui-coords" style="color:var(--text-gold);">[2500, 2500]</strong></div>
+                    <div>Tiền: <strong id="ui-money" style="color:var(--text-gold);">10 Bảng 0 Sân</strong></div>
+                </div>
+
+                <div class="stat-group">
+                    <div class="stat-label"><span>Nhân tính</span> <span id="stat-humanity-val">100/100</span></div>
+                    <div class="bar-container"><div id="bar-humanity" class="bar-fill fill-humanity" style="width: 100%;"></div></div>
+                </div>
+                <div class="stat-group">
+                    <div class="stat-label"><span>Điên Cuồng</span> <span id="stat-madness-val">0/100</span></div>
+                    <div class="bar-container"><div id="bar-madness" class="bar-fill fill-madness" style="width: 0%;"></div></div>
+                </div>
+                <div class="stat-group">
+                    <div class="stat-label"><span>Linh Lực</span> <span id="stat-spiritual-val">50/50</span></div>
+                    <div class="bar-container"><div id="bar-spiritual" class="bar-fill fill-spiritual" style="width: 100%;"></div></div>
+                </div>
+
+                <h3 style="margin-top: 10px;">TIÊU HÓA MA DƯỢC</h3>
+                <div class="stat-label"><span id="ui-acting-name">Tiêu hóa</span> <span id="stat-acting-val">0%</span></div>
+                <div class="bar-container" style="margin-bottom: 6px;"><div id="bar-acting" class="bar-fill" style="width: 0%; background: var(--text-gold);"></div></div>
+                
+                <button onclick="doActing()" style="width:100%; margin-bottom:4px;">Thực Hiện Đạo Vai (1N)</button>
+                <button onclick="tryUpgrade()" style="width:100%; border-color:var(--text-gold);">Thăng Cấp Danh Sách</button>
+            </div>
+
+            <!-- MÀN HÌNH CHÍNH & LƯỚI TỌA ĐỘ -->
+            <div class="center-screen">
+                <!-- BẢN ĐỒ LƯỚI 5000x5000 (VIEWPORT 5x5 MINI) -->
+                <div class="panel grid-viewport">
+                    <h3 style="margin-bottom:2px;">BẢN ĐỒ LƯỚI TỌA ĐỘ (5000 x 5000)</h3>
+                    <p style="font-size:0.75rem; color:var(--text-dim);" id="tile-desc">Đang đứng tại vùng đất sương mù trung tâm.</p>
+                    
+                    <div class="grid-matrix" id="mini-grid">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- D-PAD NAVIGATION -->
+                    <div class="d-pad">
+                        <div></div>
+                        <button onclick="moveGrid(0, -1)">⬆️ Bắc</button>
+                        <div></div>
+                        <button onclick="moveGrid(-1, 0)">⬅️ Tây</button>
+                        <button onclick="moveGrid(0, 1)">⬇️ Nam</button>
+                        <button onclick="moveGrid(1, 0)">➡️ Đông</button>
+                    </div>
+                </div>
+
+                <!-- KỸ NĂNG ĐẶC TRÙ THEO CON ĐƯỜNG -->
+                <div class="panel">
+                    <h3>KỸ NĂNG ĐẶC TRÙ CON ĐƯỜNG</h3>
+                    <div style="display:flex; gap:6px; margin-top:4px;">
+                        <button id="path-skill-btn" onclick="usePathwaySkill()" style="flex:1; border-color:var(--accent-purple); color:#d1c4e9;">Sử dụng Kỹ năng Con Đường</button>
+                        <button onclick="restCharacter()" id="btn-rest" style="flex:1;">Nghỉ Ngơi (CD: 7N)</button>
+                    </div>
+                </div>
+
+                <div class="panel" style="flex: 1; display:flex; flex-direction:column;">
+                    <h3 style="margin-bottom:4px;">NHẬT KÝ KHÁM PHÁ</h3>
+                    <div id="game-log" class="log-box">
+                        <div class="log-entry">Bạn đã bước vào không gian lưới tọa độ 5000x5000. Hãy sử dụng bàn phím hoặc nút điều hướng để di chuyển.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIDEBAR PHẢI: KHO ĐỒ -->
+            <div class="panel">
+                <h3>TÚI ĐỒ & VẬT PHẨM</h3>
+                <div id="inventory-list" style="font-size: 0.8rem; min-height: 120px; color: var(--text-dim); margin-bottom: 10px;">
+                    Trống rỗng...
+                </div>
+
+                <h3>TỌA ĐỘ NỔI BẬT</h3>
+                <div style="font-size: 0.75rem; color: var(--text-dim);">
+                    • [2500, 2500]: Trung tâm Backlund<br>
+                    • [1200, 3400]: Chợ Đen Quận Đông<br>
+                    • [4100, 800]: Vùng Đất Thần Bỏ Rơi
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let authUser = null;
+    let game = {
+        username: '',
+        uid: '',
+        pathwayCode: 'Fool',
+        pathwayName: 'Bói Toán Gia',
+        origin: '',
+        sequence: 9,
+        gridX: 2500,
+        gridY: 2500,
+        day: 1,
+        money: { pound: 10, solidus: 0 },
+        humanity: 100,
+        madness: 0,
+        spiritual: 50,
+        maxSpiritual: 50,
+        actingProgress: 0,
+        restCooldown: 0,
+        inventory: ['Bùa Thái Bình', 'Đặc Chất Cấp Thấp']
+    };
+
+    let combatData = { active: false, enemyName: '', enemyHp: 100, playerHp: 100 };
+
+    function loginWithGoogle() {
+        let mockName = prompt("Nhập tên tài khoản của bạn:", "PhiPhamGia_" + Math.floor(Math.random()*1000));
+        if(!mockName) return;
+
+        authUser = { uid: 'g_' + Date.now(), name: mockName };
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('header-user-badge').innerText = authUser.name;
+        document.getElementById('auth-username').innerText = authUser.name;
+        document.getElementById('origin-modal').classList.remove('hidden');
+    }
+
+    function logout() { location.reload(); }
+
+    function selectPathway(code, name) {
+        game.pathwayCode = code;
+        game.pathwayName = name;
+        document.querySelectorAll('#origin-modal button[id^="btn-path"]').forEach(b => b.style.borderColor = 'var(--border-dark)');
+        document.getElementById('btn-path-' + code).style.borderColor = 'var(--border-gold)';
+    }
+
+    function setOrigin(type, name) {
+        game.username = authUser.name;
+        game.uid = authUser.uid;
+        game.origin = name;
+        document.getElementById('origin-modal').classList.add('hidden');
+        updateUI();
+        renderMiniGrid();
+        logMessage(`Khởi tạo thành công con đường [${game.pathwayName}] tại tọa độ [2500, 2500].`);
+    }
+
+    function logMessage(msg) {
+        const box = document.getElementById('game-log');
+        box.innerHTML += `<div class="log-entry"><strong>[Tọa độ ${game.gridX}, ${game.gridY}]</strong> ${msg}</div>`;
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function updateUI() {
+        document.getElementById('ui-username').innerText = game.username;
+        document.getElementById('ui-origin').innerText = game.origin;
+        document.getElementById('ui-pathway').innerText = game.pathwayName;
+        document.getElementById('ui-sequence').innerText = `Danh Sách ${game.sequence}`;
+        document.getElementById('ui-coords').innerText = `[${game.gridX}, ${game.gridY}]`;
+        document.getElementById('ui-money').innerText = `${game.money.pound} Bảng`;
+
+        document.getElementById('stat-humanity-val').innerText = `${game.humanity}/100`;
+        document.getElementById('bar-humanity').style.width = `${game.humanity}%`;
+        document.getElementById('stat-madness-val').innerText = `${game.madness}/100`;
+        document.getElementById('bar-madness').style.width = `${game.madness}%`;
+        document.getElementById('stat-spiritual-val').innerText = `${game.spiritual}/${game.maxSpiritual}`;
+        document.getElementById('bar-spiritual').style.width = `${(game.spiritual/game.maxSpiritual)*100}%`;
+
+        document.getElementById('stat-acting-val').innerText = `${game.actingProgress}%`;
+        document.getElementById('bar-acting').style.width = `${game.actingProgress}%`;
+
+        // Update Pathway Skill Button text
+        let skillBtn = document.getElementById('path-skill-btn');
+        if(game.pathwayCode === 'Fool') skillBtn.innerText = 'Linh Cảm Bói Toán (Quét Nguy Hiểm)';
+        else if(game.pathwayCode === 'Error') skillBtn.innerText = 'Đạo Tặc / Móc Túi (Loot)';
+        else if(game.pathwayCode === 'Door') skillBtn.innerText = 'Dịch Chuyển Không Gian (+5 Ô)';
+        else if(game.pathwayCode === 'Paragon') skillBtn.innerText = 'Rèn Đúc Phi Phàm (Craft)';
+        else if(game.pathwayCode === 'Visionary') skillBtn.innerText = 'Quan Sát / Thấu Thị';
+
+        let invHTML = game.inventory.length > 0 ? game.inventory.join('<br>') : 'Trống rỗng...';
+        document.getElementById('inventory-list').innerHTML = invHTML;
+    }
+
+    // 5000x5000 GRID MOVEMENT & MINI-GRID
+    function moveGrid(dx, dy) {
+        let step = (game.pathwayCode === 'Door') ? 2 : 1; // Door pathway moves further
+        game.gridX = Math.max(0, Math.min(5000, game.gridX + (dx * step)));
+        game.gridY = Math.max(0, Math.min(5000, game.gridY + (dy * step)));
+        
+        logMessage(`Di chuyển đến tọa độ mới.`);
+        renderMiniGrid();
+        checkGridEvent();
+        updateUI();
+    }
+
+    function renderMiniGrid() {
+        let gridEl = document.getElementById('mini-grid');
+        gridEl.innerHTML = '';
+        // Render 5x5 local view centered around player
+        for(let dy = -2; dy <= 2; dy++) {
+            for(let dx = -2; dx <= 2; dx++) {
+                let tileX = game.gridX + dx;
+                let tileY = game.gridY + dy;
+                let tile = document.createElement('div');
+                tile.className = 'grid-tile';
+                if(dx === 0 && dy === 0) {
+                    tile.classList.add('current');
+                    tile.innerText = '🌟';
+                } else {
+                    tile.innerText = `${tileX%10},${tileY%10}`;
+                }
+                gridEl.appendChild(tile);
+            }
+        }
+        document.getElementById('tile-desc').innerText = `Khu vực sương mù tại ô [${game.gridX}, ${game.gridY}] (Giới hạn: 5000x5000)`;
+    }
+
+    function checkGridEvent() {
+        let rand = Math.random();
+        if(rand < 0.25) {
+            game.money.pound += 2;
+            logMessage(`🎁 Bạn tìm thấy 2 Bảng tiền rơi vấp tại ô này!`);
+        } else if(rand < 0.45) {
+            triggerCombat(`Quái vật hoang dã tại tọa độ [${game.gridX}, ${game.gridY}]`);
+        }
+    }
+
+    // PATHWAY SPECIFIC ABILITIES
+    function usePathwaySkill() {
+        if(game.spiritual < 10) { alert("Không đủ linh lực để dùng kỹ năng!"); return; }
+        game.spiritual -= 10;
+
+        if(game.pathwayCode === 'Fool') {
+            let danger = Math.random() < 0.5 ? 'An toàn, không có bẫy.' : '⚠️ CẢNH BÁO: Phía trước có linh thể hoặc quái vật rình rập!';
+            logMessage(`🔮 [Linh Cảm]: ${danger}`);
+            alert(`Kết quả bói toán linh cảm:\n${danger}`);
+        } 
+        else if(game.pathwayCode === 'Error') {
+            let loot = Math.random() < 0.6 ? 5 : 0;
+            if(loot > 0) {
+                game.money.pound += loot;
+                logMessage(`🦹 [Đạo Tặc]: Bạn ra tay chớp nhoáng, lấy trộm được ${loot} Bảng từ lữ khách ngang qua.`);
+            } else {
+                logMessage(`⚠️ [Đạo Tặc]: Móc túi thất bại, không có ai xung quanh để trộm.`);
+            }
+        } 
+        else if(game.pathwayCode === 'Door') {
+            game.gridX = Math.min(5000, game.gridX + 10);
+            logMessage(`🌀 [Không Gian Dịch Chuyển]: Bạn xé rách khoảng không, nhảy cóc 10 ô trên bản đồ.`);
+            renderMiniGrid();
+        } 
+        else if(game.pathwayCode === 'Paragon') {
+            document.getElementById('craft-modal').classList.remove('hidden');
+        } 
+        else if(game.pathwayCode === 'Visionary') {
+            logMessage(`👁️ [Khán Giả]: Bạn quan sát tâm trí xung quanh. Xung quanh bình yên, không có sát ý.`);
+            alert("Quan sát tâm trí: Mọi người xung quanh đang chìm trong sương mù và lo lắng.");
+        }
+        updateUI();
+    }
+
+    function closeCraftModal() { document.getElementById('craft-modal').classList.add('hidden'); }
+    function craftItem(itemName) {
+        if(game.money.pound >= 3) {
+            game.money.pound -= 3;
+            game.inventory.push(itemName);
+            alert(`Chế tác thành công: ${itemName}!`);
+            closeCraftModal();
+            updateUI();
+        } else {
+            alert("Không đủ Kim Tiền để rèn đúc!");
+        }
+    }
+
+    // COMBAT
+    function triggerCombat(desc) {
+        combatData.active = true;
+        combatData.playerHp = 100;
+        combatData.enemyHp = 70;
+        combatData.enemyName = desc;
+
+        document.getElementById('enemy-desc').innerText = desc;
+        document.getElementById('combat-player-hp').innerText = 100;
+        document.getElementById('combat-enemy-hp').innerText = 70;
+        document.getElementById('combat-log').innerHTML = `<div>Giao tranh bắt đầu tại tọa độ!</div>`;
+        document.getElementById('combat-modal').classList.remove('hidden');
+    }
+
+    function combatAction(action) {
+        let log = document.getElementById('combat-log');
+        if(action === 'attack') {
+            combatData.enemyHp -= 20;
+            log.innerHTML += `<div>Bạn tấn công gây 20 sát thương.</div>`;
+        } else if(action === 'escape') {
+            log.innerHTML += `<div>Bỏ chạy thành công khỏi tọa độ!</div>`;
+            setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); }, 800);
+            return;
+        }
+        if(combatData.enemyHp > 0) {
+            combatData.playerHp -= 15;
+            log.innerHTML += `<div style="color:red;">Địch phản công gây 15 sát thương!</div>`;
+        }
+        document.getElementById('combat-player-hp').innerText = Math.max(0, combatData.playerHp);
+        document.getElementById('combat-enemy-hp').innerText = Math.max(0, combatData.enemyHp);
+
+        if(combatData.enemyHp <= 0) {
+            log.innerHTML += `<div style="color:green; font-weight:bold;">Chiến thắng!</div>`;
+            setTimeout(() => { document.getElementById('combat-modal').classList.add('hidden'); updateUI(); }, 1000);
+        }
+    }
+
+    function doActing() {
+        game.actingProgress = Math.min(100, game.actingProgress + 20);
+        logMessage(`Thực hiện diễn xuất con đường ${game.pathwayName}. Tiến độ: ${game.actingProgress}%.`);
+        updateUI();
+    }
+
+    function restCharacter() {
+        game.spiritual = game.maxSpiritual;
+        game.madness = Math.max(0, game.madness - 10);
+        logMessage("Nghỉ ngơi thành công, hồi phục linh lực.");
+        updateUI();
+    }
+
+    function tryUpgrade() {
+        if(game.actingProgress < 100) { alert("Cần tiêu hóa ma dược đạt 100%!"); return; }
+        game.sequence--;
+        game.actingProgress = 0;
+        logMessage(`🎉 Thăng cấp thành công lên Danh Sách ${game.sequence}!`);
+        updateUI();
+    }
+</script>
+</body>
+</html>
